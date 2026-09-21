@@ -3,8 +3,8 @@
     "hack100": {
       "rolls": "Jets",
       "abilities": "Compétences",
+      "attacks": "Attaques",
       "specialisms": "Spécialités",
-      "rates": "Taux",
       "inventory": "Inventaire",
       "weapons": "Armes",
       "armor": "Armures",
@@ -25,10 +25,8 @@
         "armor": "Clic : équiper ou retirer. Clic droit : ouvrir la fiche.",
         "consumable": "Clic : utiliser (retire 1 à la quantité et l'annonce dans le chat). Clic droit : ouvrir la fiche.",
         "item": "Clic : montrer l'objet dans le chat. Clic droit : ouvrir la fiche.",
-        "experience": "Clic : jet d'expérience. Au-dessus de la valeur actuelle, elle augmente de 1d5.",
         "resource": "Clic gauche : +1. Clic droit : -1.",
-        "initiative": "Lance l'initiative et ajoute le jeton au combat si besoin.",
-        "visibility": "Visible uniquement par le MJ."
+        "initiative": "Lance l'initiative et ajoute le jeton au combat si besoin."
       }
     }
   }

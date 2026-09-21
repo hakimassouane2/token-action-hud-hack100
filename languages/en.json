@@ -3,8 +3,8 @@
     "hack100": {
       "rolls": "Rolls",
       "abilities": "Abilities",
+      "attacks": "Attacks",
       "specialisms": "Specialisms",
-      "rates": "Rates",
       "inventory": "Inventory",
       "weapons": "Weapons",
       "armor": "Armor",
@@ -25,10 +25,8 @@
         "armor": "Click: equip or remove. Right click: open the sheet.",
         "consumable": "Click: use (removes 1 from the quantity and posts it to chat). Right click: open the sheet.",
         "item": "Click: show the item in chat. Right click: open the sheet.",
-        "experience": "Click: experience roll. Above the current value, it improves by 1d5.",
         "resource": "Left click: +1. Right click: -1.",
-        "initiative": "Rolls initiative and adds the token to combat if needed.",
-        "visibility": "Visible to the GM only."
+        "initiative": "Rolls initiative and adds the token to combat if needed."
       }
     }
   }

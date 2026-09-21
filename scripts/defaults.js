@@ -21,11 +21,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         nestId: "rolls",
         id: "rolls",
         name: coreModule.api.Utils.i18n("tokenActionHud.hack100.rolls"),
-        groups: [
-          { ...groups.abilities, nestId: "rolls_abilities" },
-          { ...groups.specialisms, nestId: "rolls_specialisms" },
-          { ...groups.rates, nestId: "rolls_rates" },
-        ],
+        // Subgroups (Abilities / Attacks / Specialisms) are added at runtime
+        // by the action handler, so they only appear when they contain something.
+        groups: [],
       },
       {
         nestId: "inventory",

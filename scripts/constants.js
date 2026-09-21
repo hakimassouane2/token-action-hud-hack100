@@ -15,14 +15,10 @@ export const REQUIRED_CORE_MODULE_VERSION = "2";
 
 /**
  * Groups displayed in the HUD. Names are localization keys resolved in defaults.js.
- * The utility subgroups (resources, combat, token, rest) are derived at runtime.
+ * The rolls subgroups (abilities, attacks, specialisms) and the utility subgroups
+ * (resources, combat, token, rest) are derived at runtime.
  */
 export const GROUP = {
-  // Rolls
-  abilities: { id: "abilities", name: "tokenActionHud.hack100.abilities", type: "system" },
-  specialisms: { id: "specialisms", name: "tokenActionHud.hack100.specialisms", type: "system" },
-  rates: { id: "rates", name: "tokenActionHud.hack100.rates", type: "system" },
-
   // Inventory
   weapons: { id: "weapons", name: "tokenActionHud.hack100.weapons", type: "system" },
   armor: { id: "armor", name: "tokenActionHud.hack100.armor", type: "system" },
@@ -48,6 +44,11 @@ export const ABILITIES = [
   "melee",
   "ranged",
 ];
+
+/**
+ * Abilities listed as attacks rather than skills
+ */
+export const ATTACK_ABILITIES = ["melee", "ranged"];
 
 /**
  * Foundry core images used by the utility actions

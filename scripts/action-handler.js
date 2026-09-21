@@ -1,4 +1,4 @@
-import { ABILITIES, IMAGES } from "./constants.js";
+import { ABILITIES, ATTACK_ABILITIES, IMAGES } from "./constants.js";
 
 export let ActionHandler = null;
 
@@ -24,9 +24,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         ...coreModule.api.Utils.sortItemsByName(this.actor.items).values(),
       ];
 
-      this.#buildAbilities();
-      this.#buildSpecialisms();
-      this.#buildRates();
+      this.#buildRolls();
       this.#buildWeapons();
       this.#buildArmor();
       this.#buildItems();
@@ -49,14 +47,41 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     }
 
     /**
-     * Abilities (characters only), with their percentage
+     * Rolls tab, organised into runtime-derived subgroups:
+     *   - Abilities  : character abilities except melee/ranged, or NPC rates
+     *   - Attacks    : melee and ranged, or NPC rate attacks
+     *   - Specialisms: named specialisms (characters)
+     *
+     * Derived like the utility subgroups, so they show up whatever layout a
+     * user saved before, and only when they contain something.
      */
-    #buildAbilities() {
+    #buildRolls() {
+      const parent = { nestId: "rolls", level: 1 };
+      const addSubgroup = (id, name, actions) => {
+        if (actions.length === 0) return;
+        const groupData = { id, name, type: "system-derived" };
+        this.addGroup(groupData, parent, true);
+        this.addActions(actions, groupData);
+      };
+
+      const { abilities, attacks } =
+        this.actorType === "npc" ? this.#rateActions() : this.#abilityActions();
+
+      addSubgroup("rollAbilities", i18n("tokenActionHud.hack100.abilities"), abilities);
+      addSubgroup("rollAttacks", i18n("tokenActionHud.hack100.attacks"), attacks);
+      addSubgroup("rollSpecialisms", i18n("tokenActionHud.hack100.specialisms"), this.#specialismActions());
+    }
+
+    /**
+     * Character abilities with their percentage, split into skills and attacks
+     * @returns {{abilities: object[], attacks: object[]}}
+     */
+    #abilityActions() {
       const abilities = this.system.abilities;
-      if (this.actorType !== "character" || !abilities) return;
+      if (this.actorType !== "character" || !abilities) return { abilities: [], attacks: [] };
 
       const hint = i18n("tokenActionHud.hack100.hints.roll");
-      const actions = ABILITIES.filter((id) => abilities[id]).map((id) => {
+      const toAction = (id) => {
         const name = i18n(`hack100.abilities.${id}`);
         const value = abilities[id].value ?? 0;
         return {
@@ -66,17 +91,21 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           encodedValue: ["ability", id].join(this.delimiter),
           tooltip: this.#tooltip(name, { subtitle: `${value}%`, hint }),
         };
-      });
+      };
 
-      this.addActions(actions, { id: "abilities", type: "system" });
+      const ids = ABILITIES.filter((id) => abilities[id]);
+      return {
+        abilities: ids.filter((id) => !ATTACK_ABILITIES.includes(id)).map(toAction),
+        attacks: ids.filter((id) => ATTACK_ABILITIES.includes(id)).map(toAction),
+      };
     }
 
     /**
      * Named specialisms (characters only), with their percentage
      */
-    #buildSpecialisms() {
+    #specialismActions() {
       const specialisms = this.system.specialisms;
-      if (this.actorType !== "character" || !specialisms) return;
+      if (this.actorType !== "character" || !specialisms) return [];
 
       const sp = this.system.sp ?? {};
       const subtitleSp = game.i18n.format("tokenActionHud.hack100.spLeft", {
@@ -85,7 +114,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       });
       const hint = i18n("tokenActionHud.hack100.hints.specialism");
 
-      const actions = Object.entries(specialisms)
+      return Object.entries(specialisms)
         .filter(([, specialism]) => specialism?.name)
         .sort(([, a], [, b]) => a.name.localeCompare(b.name))
         .map(([key, specialism]) => ({
@@ -98,20 +127,18 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             hint,
           }),
         }));
-
-      this.addActions(actions, { id: "specialisms", type: "system" });
     }
 
     /**
-     * NPC rates: base and special, each as a plain roll and as an attack
+     * NPC rates (base and special): plain rolls as skills, attacks apart
+     * @returns {{abilities: object[], attacks: object[]}}
      */
-    #buildRates() {
-      if (this.actorType !== "npc") return;
-
+    #rateActions() {
       const bonus = this.system.damageBonus ?? 0;
       const attackSubtitle = game.i18n.format("tokenActionHud.hack100.attackDamage", {
         bonus: bonus >= 0 ? `+${bonus}` : `${bonus}`,
       });
+      const hint = i18n("tokenActionHud.hack100.hints.roll");
       const rates = [
         { kind: "base", name: i18n("hack100.npc.rate"), value: this.system.rate ?? 0 },
         {
@@ -121,33 +148,29 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         },
       ];
 
-      const actions = rates.flatMap(({ kind, name, value }) => {
+      const abilities = rates.map(({ kind, name, value }) => ({
+        id: `rate_${kind}`,
+        name,
+        info1: { text: `${value}%` },
+        encodedValue: ["rate", kind, "roll"].join(this.delimiter),
+        tooltip: this.#tooltip(name, { subtitle: `${value}%`, hint }),
+      }));
+
+      const attacks = rates.map(({ kind, name, value }) => {
         const attackName = `${i18n("hack100.npc.attack")} (${name})`;
-        return [
-          {
-            id: `rate_${kind}`,
-            name,
-            info1: { text: `${value}%` },
-            encodedValue: ["rate", kind, "roll"].join(this.delimiter),
-            tooltip: this.#tooltip(name, {
-              subtitle: `${value}%`,
-              hint: i18n("tokenActionHud.hack100.hints.roll"),
-            }),
-          },
-          {
-            id: `rate_${kind}_attack`,
-            name: attackName,
-            info1: { text: `${value}%` },
-            encodedValue: ["rate", kind, "attack"].join(this.delimiter),
-            tooltip: this.#tooltip(attackName, {
-              subtitle: `${value}% · ${attackSubtitle}`,
-              hint: i18n("tokenActionHud.hack100.hints.roll"),
-            }),
-          },
-        ];
+        return {
+          id: `rate_${kind}_attack`,
+          name: attackName,
+          info1: { text: `${value}%` },
+          encodedValue: ["rate", kind, "attack"].join(this.delimiter),
+          tooltip: this.#tooltip(attackName, {
+            subtitle: `${value}% · ${attackSubtitle}`,
+            hint,
+          }),
+        };
       });
 
-      this.addActions(actions, { id: "rates", type: "system" });
+      return { abilities, attacks };
     }
 
     /**
@@ -247,7 +270,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     #buildExperience() {
       if (this.actorType !== "character") return;
 
-      const hint = i18n("tokenActionHud.hack100.hints.experience");
       const actions = [];
       for (const id of ABILITIES) {
         const ability = this.system.abilities?.[id];
@@ -258,7 +280,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name,
           info1: { text: `${ability.value ?? 0}%` },
           encodedValue: ["experience", id].join(this.delimiter),
-          tooltip: this.#tooltip(name, { subtitle: `${ability.value ?? 0}%`, hint }),
         });
       }
       for (const [key, specialism] of Object.entries(this.system.specialisms ?? {})) {
@@ -268,10 +289,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name: specialism.name,
           info1: { text: `${specialism.value ?? 0}%` },
           encodedValue: ["experience", key].join(this.delimiter),
-          tooltip: this.#tooltip(specialism.name, {
-            subtitle: `${specialism.value ?? 0}%`,
-            hint,
-          }),
         });
       }
 
@@ -344,7 +361,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name,
           img: token.inCombat ? IMAGES.leaveCombat : IMAGES.joinCombat,
           encodedValue: ["utility", "toggleCombat"].join(this.delimiter),
-          tooltip: this.#tooltip(name),
         });
       }
       addSubgroup("utilityCombat", i18n("tokenActionHud.hack100.utilityCombat"), combat);
@@ -359,9 +375,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name,
           img: hidden ? IMAGES.visible : IMAGES.invisible,
           encodedValue: ["utility", "toggleVisibility"].join(this.delimiter),
-          tooltip: this.#tooltip(name, {
-            hint: i18n("tokenActionHud.hack100.hints.visibility"),
-          }),
         });
       }
       addSubgroup("utilityToken", i18n("tokenActionHud.hack100.utilityToken"), tokenActions);
