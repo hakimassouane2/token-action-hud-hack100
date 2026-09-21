@@ -40,13 +40,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     }
 
     /**
-     * Tooltip: title, then a hint line (how to click)
+     * Tooltip: title, then the explanation as a plain paragraph
      * @returns {{content: string, class: string}}
      */
-    #tooltip(title, hint) {
+    #tooltip(title, body) {
       const html = [
         `<h4 class="hack100-tah-title">${title}</h4>`,
-        hint ? `<p class="hack100-tah-hint">${hint}</p>` : "",
+        body ? `<p class="hack100-tah-body">${body}</p>` : "",
       ].join("");
       return { content: html, class: "hack100-tah-tooltip" };
     }
