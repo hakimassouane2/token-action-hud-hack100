@@ -46,6 +46,22 @@ export const ABILITIES = [
 ];
 
 /**
+ * Foundry core images for each ability (rolls and experience)
+ */
+export const ABILITY_IMAGES = {
+  strength: "icons/magic/control/buff-strength-muscle-damage-orange.webp",
+  agility: "icons/skills/movement/feet-winged-boots-brown.webp",
+  stealth: "icons/magic/perception/shadow-stealth-eyes-purple.webp",
+  toughness: "icons/magic/defensive/shield-barrier-deflect-gold.webp",
+  perception: "icons/magic/perception/eye-ringed-green.webp",
+  reasoning: "icons/skills/trades/academics-investigation-puzzles.webp",
+  influence: "icons/skills/social/diplomacy-handshake-yellow.webp",
+  willpower: "icons/magic/holy/meditation-chi-focus-blue.webp",
+  melee: "icons/skills/melee/hand-grip-sword-strike-orange.webp",
+  ranged: "icons/skills/ranged/archery-bow-attack-yellow.webp",
+};
+
+/**
  * Abilities listed as attacks rather than skills
  */
 export const ATTACK_ABILITIES = ["melee", "ranged"];
@@ -56,6 +72,7 @@ export const ATTACK_ABILITIES = ["melee", "ranged"];
 export const IMAGES = {
   luck: "icons/magic/control/buff-luck-fortune-clover-green.webp",
   sp: "icons/magic/symbols/star-yellow.webp",
+  specialism: "icons/magic/symbols/star-rising-purple.webp",
   initiative: "icons/sundries/gaming/dice-runed-brown.webp",
   joinCombat: "icons/skills/melee/hand-grip-sword-orange.webp",
   leaveCombat: "icons/skills/movement/figure-running-gray.webp",

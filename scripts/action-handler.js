@@ -1,4 +1,4 @@
-import { ABILITIES, ATTACK_ABILITIES, IMAGES } from "./constants.js";
+import { ABILITIES, ABILITY_IMAGES, ATTACK_ABILITIES, IMAGES } from "./constants.js";
 
 export let ActionHandler = null;
 
@@ -88,6 +88,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const toAction = (id) => ({
         id: `ability_${id}`,
         name: i18n(`hack100.abilities.${id}`),
+        img: ABILITY_IMAGES[id],
         info1: badge(`${abilities[id].value ?? 0}%`),
         encodedValue: ["ability", id].join(this.delimiter),
       });
@@ -112,6 +113,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         .map(([key, specialism]) => ({
           id: `specialism_${key}`,
           name: specialism.name,
+          img: IMAGES.specialism,
           info1: badge(`${specialism.value ?? 0}%`),
           encodedValue: ["specialism", key].join(this.delimiter),
         }));
@@ -236,6 +238,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: `xp_${id}`,
           name,
+          img: ABILITY_IMAGES[id],
           info1: badge(`${ability.value ?? 0}%`),
           encodedValue: ["experience", id].join(this.delimiter),
         });
@@ -245,6 +248,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: `xp_${key}`,
           name: specialism.name,
+          img: IMAGES.specialism,
           info1: badge(`${specialism.value ?? 0}%`),
           encodedValue: ["experience", key].join(this.delimiter),
         });
