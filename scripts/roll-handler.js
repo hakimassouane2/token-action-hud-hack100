@@ -13,6 +13,32 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
    */
   RollHandler = class RollHandler extends coreModule.api.RollHandler {
     /**
+     * Add the tokens to the combat, or take them out of it
+     * @param {Token[]} tokens
+     * @param {boolean} add
+     */
+    async #setInCombat(tokens, add) {
+      const docs = tokens.map((token) => token.document).filter((doc) => doc && doc.inCombat !== add);
+      if (!docs.length) return;
+      const cls = CONFIG.Token.documentClass;
+      return add ? cls.createCombatants(docs) : cls.deleteCombatants(docs);
+    }
+
+    /**
+     * Hide or reveal the tokens (GM only)
+     * @param {Token[]} tokens
+     * @param {boolean} hidden
+     */
+    async #setHidden(tokens, hidden) {
+      if (!game.user?.isGM) return;
+      const updates = tokens
+        .map((token) => token.document)
+        .filter((doc) => doc && doc.hidden !== hidden)
+        .map((doc) => ({ _id: doc.id, hidden }));
+      if (updates.length) return canvas.scene?.updateEmbeddedDocuments("Token", updates);
+    }
+
+    /**
      * Handle action click
      * Called by Token Action HUD Core when an action is left or right-clicked
      * @override
@@ -20,6 +46,16 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     async handleActionClick(event, encodedValue) {
       const delimiter = this.delimiter ?? "|";
       const [actionType, actionId, actionSubType] = encodedValue.split(delimiter);
+
+      // Combat and visibility toggles apply once to the whole selection
+      if (actionType === "utility" && ["toggleCombat", "toggleVisibility"].includes(actionId)) {
+        const tokens = this.actor
+          ? [this.token ?? coreModule.api.Utils.getFirstControlledToken?.()].filter(Boolean)
+          : coreModule.api.Utils.getControlledTokens?.() ?? [];
+        return actionId === "toggleCombat"
+          ? this.#setInCombat(tokens, actionSubType !== "remove")
+          : this.#setHidden(tokens, actionSubType !== "show");
+      }
 
       if (this.actor) {
         return this.#handle(this.actor, this.token, actionType, actionId, actionSubType, event);
@@ -108,17 +144,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       switch (actionId) {
         case "initiative":
           return actor.rollInitiative?.({ createCombatants: true });
-
-        case "toggleCombat":
-          return (token?.document ?? coreModule.api.Utils.getFirstControlledToken?.()?.document)
-            ?.toggleCombatant?.();
-
-        case "toggleVisibility": {
-          if (!game.user?.isGM) return;
-          const doc =
-            token?.document ?? coreModule.api.Utils.getFirstControlledToken?.()?.document;
-          return doc?.update({ hidden: !doc.hidden });
-        }
 
         case "shortRest":
           return actor.shortRest?.();

@@ -23,8 +23,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
      * @override
      */
     async buildSystemActions(groupIds) {
-      if (!this.actor) return;
+      // No single actor means several tokens are selected
+      if (!this.actor) return this.#buildMultipleTokens();
 
+      this.selectedTokens = this.token ? [this.token] : [];
       this.actorType = this.actor.type;
       this.system = this.actor.system ?? {};
       this.items = [
@@ -36,6 +38,43 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       this.#buildArmor();
       this.#buildItems();
       this.#buildExperience();
+      this.#buildUtility();
+    }
+
+    /**
+     * Actions offered when SEVERAL tokens are selected: what they have in
+     * common. Every token plays the action on its own (each rolls its own
+     * check), the combat and visibility toggles apply to the whole selection.
+     *   - Characters only: abilities and basic attacks (melee / ranged),
+     *     without percentages since they differ from one actor to the next
+     *   - Any selection  : initiative, join / leave combat, visibility (GM)
+     */
+    #buildMultipleTokens() {
+      this.selectedTokens = this.tokens?.length ? [...this.tokens] : [...(canvas.tokens?.controlled ?? [])];
+      if (this.selectedTokens.length < 2) return;
+
+      const actors = this.selectedTokens.map((token) => token.actor);
+      if (actors.every((actor) => actor?.type === "character")) {
+        const toAction = (id) => ({
+          id: `ability_${id}`,
+          name: i18n(`hack100.abilities.${id}`),
+          img: ABILITY_IMAGES[id],
+          encodedValue: ["ability", id].join(this.delimiter),
+        });
+        const parent = { nestId: "rolls", level: 1 };
+        const addSubgroup = (id, name, actions) => {
+          const groupData = { id, name, type: "system-derived" };
+          this.addGroup(groupData, parent, true);
+          this.addActions(actions, groupData);
+        };
+        addSubgroup(
+          "rollAbilities",
+          i18n("tokenActionHud.hack100.abilities"),
+          ABILITIES.filter((id) => !ATTACK_ABILITIES.includes(id)).map(toAction)
+        );
+        addSubgroup("rollAttacks", i18n("tokenActionHud.hack100.attacks"), ATTACK_ABILITIES.map(toAction));
+      }
+
       this.#buildUtility();
     }
 
@@ -125,24 +164,34 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
      */
     #rateActions() {
       const rates = [
-        { kind: "base", name: i18n("hack100.npc.rate"), value: this.system.rate ?? 0 },
+        {
+          kind: "base",
+          name: i18n("hack100.npc.rate"),
+          value: this.system.rate ?? 0,
+          img: IMAGES.rateBase,
+          attackImg: IMAGES.attackBase,
+        },
         {
           kind: "special",
           name: this.system.specialRateLabel || i18n("hack100.npc.specialRate"),
           value: this.system.specialRate ?? 0,
+          img: IMAGES.rateSpecial,
+          attackImg: IMAGES.attackSpecial,
         },
       ];
 
-      const abilities = rates.map(({ kind, name, value }) => ({
+      const abilities = rates.map(({ kind, name, value, img }) => ({
         id: `rate_${kind}`,
         name,
+        img,
         info1: badge(`${value}%`),
         encodedValue: ["rate", kind, "roll"].join(this.delimiter),
       }));
 
-      const attacks = rates.map(({ kind, name, value }) => ({
+      const attacks = rates.map(({ kind, name, value, attackImg }) => ({
         id: `rate_${kind}_attack`,
         name: `${i18n("hack100.npc.attack")} (${name})`,
+        img: attackImg,
         info1: badge(`${value}%`),
         encodedValue: ["rate", kind, "attack"].join(this.delimiter),
       }));
@@ -263,10 +312,11 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
      *   - Combat   : initiative + join/leave the encounter
      *   - Token    : visibility toggle (GM only)
      *   - Rest     : short / long rest (characters)
+     * The combat and token actions cover every selected token.
      */
     #buildUtility() {
       const parent = { nestId: "utility", level: 1 };
-      const token = this.token;
+      const tokens = this.selectedTokens ?? [];
 
       const addSubgroup = (id, name, actions) => {
         if (actions.length === 0) return;
@@ -311,29 +361,28 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           encodedValue: ["utility", "initiative"].join(this.delimiter),
         },
       ];
-      if (token) {
-        const name = i18n(
-          token.inCombat ? "tokenActionHud.removeFromCombat" : "tokenActionHud.addToCombat"
-        );
+      if (tokens.length) {
+        // Once every selected token is in combat, the action takes them out
+        const remove = tokens.every((token) => token.inCombat);
         combat.push({
           id: "utility_toggleCombat",
-          name,
-          img: token.inCombat ? IMAGES.leaveCombat : IMAGES.joinCombat,
-          encodedValue: ["utility", "toggleCombat"].join(this.delimiter),
+          name: i18n(remove ? "tokenActionHud.removeFromCombat" : "tokenActionHud.addToCombat"),
+          img: remove ? IMAGES.leaveCombat : IMAGES.joinCombat,
+          encodedValue: ["utility", "toggleCombat", remove ? "remove" : "add"].join(this.delimiter),
         });
       }
       addSubgroup("utilityCombat", i18n("tokenActionHud.hack100.utilityCombat"), combat);
 
       /* --- Token: visibility toggle (GM only) ----------------------------- */
       const tokenActions = [];
-      if (token && game.user?.isGM) {
-        const hidden = token.document?.hidden;
-        const name = i18n(hidden ? "tokenActionHud.makeVisible" : "tokenActionHud.makeInvisible");
+      if (tokens.length && game.user?.isGM) {
+        // Once every selected token is hidden, the action reveals them
+        const show = tokens.every((token) => token.document?.hidden);
         tokenActions.push({
           id: "utility_toggleVisibility",
-          name,
-          img: hidden ? IMAGES.visible : IMAGES.invisible,
-          encodedValue: ["utility", "toggleVisibility"].join(this.delimiter),
+          name: i18n(show ? "tokenActionHud.makeVisible" : "tokenActionHud.makeInvisible"),
+          img: show ? IMAGES.visible : IMAGES.invisible,
+          encodedValue: ["utility", "toggleVisibility", show ? "show" : "hide"].join(this.delimiter),
         });
       }
       addSubgroup("utilityToken", i18n("tokenActionHud.hack100.utilityToken"), tokenActions);
