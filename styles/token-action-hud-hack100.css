@@ -23,15 +23,6 @@
   border-bottom: 1px solid var(--color-border-light-tertiary, rgba(255, 255, 255, 0.2));
   padding-bottom: 2px;
 }
-.hack100-tah-tooltip .hack100-tah-subtitle {
-  margin: 0 0 4px;
-  font-style: italic;
-  opacity: 0.85;
-}
-.hack100-tah-tooltip .hack100-tah-description {
-  font-weight: normal;
-  white-space: pre-line;
-}
 .hack100-tah-tooltip .hack100-tah-hint {
   margin: 0.5rem 0 0;
   padding-top: 0.375rem;

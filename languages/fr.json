@@ -16,17 +16,8 @@
       "utilityCombat": "Combat",
       "utilityToken": "Jeton",
       "utilityRest": "Repos",
-      "spLeft": "PS : {value}/{max}",
-      "attackDamage": "Dégâts : dizaines du jet {bonus}",
       "hints": {
-        "roll": "Clic : jet direct. Maj+clic : fenêtre de jet (modificateur, chance, PS).",
-        "specialism": "Clic : jet direct (demande au moins 1 PS). Maj+clic : fenêtre de jet (modificateur, chance, PS à dépenser).",
-        "weapon": "Clic : attaque directe, dégâts lancés si elle touche. Maj+clic : fenêtre de jet. Clic droit : ouvrir la fiche.",
-        "armor": "Clic : équiper ou retirer. Clic droit : ouvrir la fiche.",
-        "consumable": "Clic : utiliser (retire 1 à la quantité et l'annonce dans le chat). Clic droit : ouvrir la fiche.",
-        "item": "Clic : montrer l'objet dans le chat. Clic droit : ouvrir la fiche.",
-        "resource": "Clic gauche : +1. Clic droit : -1.",
-        "initiative": "Lance l'initiative et ajoute le jeton au combat si besoin."
+        "resource": "Clic gauche : +1. Clic droit : -1."
       }
     }
   }

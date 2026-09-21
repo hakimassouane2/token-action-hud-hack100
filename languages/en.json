@@ -16,17 +16,8 @@
       "utilityCombat": "Combat",
       "utilityToken": "Token",
       "utilityRest": "Rest",
-      "spLeft": "SP: {value}/{max}",
-      "attackDamage": "Damage: tens digit of the roll {bonus}",
       "hints": {
-        "roll": "Click: roll right away. Shift+click: roll dialog (modifier, luck, SP).",
-        "specialism": "Click: roll right away (needs at least 1 SP). Shift+click: roll dialog (modifier, luck, SP to spend).",
-        "weapon": "Click: attack right away, damage rolled on a hit. Shift+click: roll dialog. Right click: open the sheet.",
-        "armor": "Click: equip or remove. Right click: open the sheet.",
-        "consumable": "Click: use (removes 1 from the quantity and posts it to chat). Right click: open the sheet.",
-        "item": "Click: show the item in chat. Right click: open the sheet.",
-        "resource": "Left click: +1. Right click: -1.",
-        "initiative": "Rolls initiative and adds the token to combat if needed."
+        "resource": "Left click: +1. Right click: -1."
       }
     }
   }

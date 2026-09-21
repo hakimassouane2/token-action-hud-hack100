@@ -33,14 +33,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     }
 
     /**
-     * Tooltip: title, optional subtitle, then a hint line (how to click)
+     * Tooltip: title, then a hint line (how to click)
      * @returns {{content: string, class: string}}
      */
-    #tooltip(title, { subtitle, description, hint } = {}) {
+    #tooltip(title, hint) {
       const html = [
         `<h4 class="hack100-tah-title">${title}</h4>`,
-        subtitle ? `<p class="hack100-tah-subtitle">${subtitle}</p>` : "",
-        description ? `<div class="hack100-tah-description">${description}</div>` : "",
         hint ? `<p class="hack100-tah-hint">${hint}</p>` : "",
       ].join("");
       return { content: html, class: "hack100-tah-tooltip" };
@@ -80,18 +78,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const abilities = this.system.abilities;
       if (this.actorType !== "character" || !abilities) return { abilities: [], attacks: [] };
 
-      const hint = i18n("tokenActionHud.hack100.hints.roll");
-      const toAction = (id) => {
-        const name = i18n(`hack100.abilities.${id}`);
-        const value = abilities[id].value ?? 0;
-        return {
-          id: `ability_${id}`,
-          name,
-          info1: { text: `${value}%` },
-          encodedValue: ["ability", id].join(this.delimiter),
-          tooltip: this.#tooltip(name, { subtitle: `${value}%`, hint }),
-        };
-      };
+      const toAction = (id) => ({
+        id: `ability_${id}`,
+        name: i18n(`hack100.abilities.${id}`),
+        info1: { text: `${abilities[id].value ?? 0}%` },
+        encodedValue: ["ability", id].join(this.delimiter),
+      });
 
       const ids = ABILITIES.filter((id) => abilities[id]);
       return {
@@ -107,13 +99,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const specialisms = this.system.specialisms;
       if (this.actorType !== "character" || !specialisms) return [];
 
-      const sp = this.system.sp ?? {};
-      const subtitleSp = game.i18n.format("tokenActionHud.hack100.spLeft", {
-        value: sp.value ?? 0,
-        max: sp.max ?? 0,
-      });
-      const hint = i18n("tokenActionHud.hack100.hints.specialism");
-
       return Object.entries(specialisms)
         .filter(([, specialism]) => specialism?.name)
         .sort(([, a], [, b]) => a.name.localeCompare(b.name))
@@ -122,10 +107,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name: specialism.name,
           info1: { text: `${specialism.value ?? 0}%` },
           encodedValue: ["specialism", key].join(this.delimiter),
-          tooltip: this.#tooltip(specialism.name, {
-            subtitle: `${specialism.value ?? 0}% · ${subtitleSp}`,
-            hint,
-          }),
         }));
     }
 
@@ -134,11 +115,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
      * @returns {{abilities: object[], attacks: object[]}}
      */
     #rateActions() {
-      const bonus = this.system.damageBonus ?? 0;
-      const attackSubtitle = game.i18n.format("tokenActionHud.hack100.attackDamage", {
-        bonus: bonus >= 0 ? `+${bonus}` : `${bonus}`,
-      });
-      const hint = i18n("tokenActionHud.hack100.hints.roll");
       const rates = [
         { kind: "base", name: i18n("hack100.npc.rate"), value: this.system.rate ?? 0 },
         {
@@ -153,22 +129,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         name,
         info1: { text: `${value}%` },
         encodedValue: ["rate", kind, "roll"].join(this.delimiter),
-        tooltip: this.#tooltip(name, { subtitle: `${value}%`, hint }),
       }));
 
-      const attacks = rates.map(({ kind, name, value }) => {
-        const attackName = `${i18n("hack100.npc.attack")} (${name})`;
-        return {
-          id: `rate_${kind}_attack`,
-          name: attackName,
-          info1: { text: `${value}%` },
-          encodedValue: ["rate", kind, "attack"].join(this.delimiter),
-          tooltip: this.#tooltip(attackName, {
-            subtitle: `${value}% · ${attackSubtitle}`,
-            hint,
-          }),
-        };
-      });
+      const attacks = rates.map(({ kind, name, value }) => ({
+        id: `rate_${kind}_attack`,
+        name: `${i18n("hack100.npc.attack")} (${name})`,
+        info1: { text: `${value}%` },
+        encodedValue: ["rate", kind, "attack"].join(this.delimiter),
+      }));
 
       return { abilities, attacks };
     }
@@ -176,17 +144,12 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
     /**
      * Item action shared by every inventory group
      */
-    #itemAction(item, actionType, { subtitle, hint } = {}) {
+    #itemAction(item, actionType) {
       return {
         id: item.id,
         name: item.name,
         img: coreModule.api.Utils.getImage(item),
         encodedValue: [actionType, item.id].join(this.delimiter),
-        tooltip: this.#tooltip(item.name, {
-          subtitle,
-          description: item.system?.description,
-          hint,
-        }),
       };
     }
 
@@ -197,17 +160,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const weapons = this.items.filter((item) => item.type === "weapon");
       if (weapons.length === 0) return;
 
-      const hint = i18n("tokenActionHud.hack100.hints.weapon");
       const actions = weapons.map((item) => {
         const damage = parseInt(item.system?.damage) || 0;
-        const type = i18n(`hack100.items.${item.system?.weaponType ?? "melee"}`);
-        const damageText = game.i18n.format("tokenActionHud.hack100.attackDamage", {
-          bonus: damage >= 0 ? `+${damage}` : `${damage}`,
-        });
-        const action = this.#itemAction(item, "weapon", {
-          subtitle: `${type} · ${damageText}`,
-          hint,
-        });
+        const action = this.#itemAction(item, "weapon");
         action.info1 = { text: damage >= 0 ? `+${damage}` : `${damage}` };
         return action;
       });
@@ -222,13 +177,9 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const armors = this.items.filter((item) => item.type === "armor");
       if (armors.length === 0) return;
 
-      const hint = i18n("tokenActionHud.hack100.hints.armor");
       const actions = armors.map((item) => {
         const protection = parseInt(item.system?.protection) || 0;
-        const action = this.#itemAction(item, "armor", {
-          subtitle: `${i18n("hack100.items.protectionValue")} ${protection}`,
-          hint,
-        });
+        const action = this.#itemAction(item, "armor");
         action.cssClass = item.system?.equipped ? "toggle active" : "toggle";
         action.info1 = { text: `${protection}` };
         return action;
@@ -244,8 +195,8 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const gear = this.items.filter((item) => item.type === "item");
       if (gear.length === 0) return;
 
-      const toAction = (item, hintKey) => {
-        const action = this.#itemAction(item, "item", { hint: i18n(hintKey) });
+      const toAction = (item) => {
+        const action = this.#itemAction(item, "item");
         const quantity = item.system?.quantity;
         if (typeof quantity === "number" && (item.system?.consumable || quantity !== 1)) {
           action.info1 = { text: `×${quantity}` };
@@ -255,10 +206,10 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
 
       const consumables = gear
         .filter((item) => item.system?.consumable)
-        .map((item) => toAction(item, "tokenActionHud.hack100.hints.consumable"));
+        .map(toAction);
       const others = gear
         .filter((item) => !item.system?.consumable)
-        .map((item) => toAction(item, "tokenActionHud.hack100.hints.item"));
+        .map(toAction);
 
       if (consumables.length) this.addActions(consumables, { id: "consumables", type: "system" });
       if (others.length) this.addActions(others, { id: "items", type: "system" });
@@ -326,7 +277,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             img: IMAGES.luck,
             info1: { text: `${luck.value ?? 0}/${luck.max ?? 3}` },
             encodedValue: ["resource", "luck"].join(this.delimiter),
-            tooltip: this.#tooltip(i18n("hack100.luck.title"), { hint: resourceHint }),
+            tooltip: this.#tooltip(i18n("hack100.luck.title"), resourceHint),
           },
           {
             id: "resource_sp",
@@ -334,7 +285,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             img: IMAGES.sp,
             info1: { text: `${sp.value ?? 0}/${sp.max ?? 0}` },
             encodedValue: ["resource", "sp"].join(this.delimiter),
-            tooltip: this.#tooltip(i18n("hack100.sp.title"), { hint: resourceHint }),
+            tooltip: this.#tooltip(i18n("hack100.sp.title"), resourceHint),
           }
         );
       }
@@ -347,9 +298,6 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
           name: i18n("tokenActionHud.hack100.initiative"),
           img: IMAGES.initiative,
           encodedValue: ["utility", "initiative"].join(this.delimiter),
-          tooltip: this.#tooltip(i18n("tokenActionHud.hack100.initiative"), {
-            hint: i18n("tokenActionHud.hack100.hints.initiative"),
-          }),
         },
       ];
       if (token) {
@@ -390,20 +338,17 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             img: IMAGES.shortRest,
             cssClass: shortRestUsed ? "disabled" : "",
             encodedValue: ["utility", "shortRest"].join(this.delimiter),
-            tooltip: this.#tooltip(i18n("hack100.rest.shortRest"), {
-              hint: i18n(
-                shortRestUsed ? "hack100.rest.shortRestUsed" : "hack100.rest.shortRestHint"
-              ),
-            }),
+            tooltip: this.#tooltip(
+              i18n("hack100.rest.shortRest"),
+              i18n(shortRestUsed ? "hack100.rest.shortRestUsed" : "hack100.rest.shortRestHint")
+            ),
           },
           {
             id: "utility_longRest",
             name: i18n("hack100.rest.longRest"),
             img: IMAGES.longRest,
             encodedValue: ["utility", "longRest"].join(this.delimiter),
-            tooltip: this.#tooltip(i18n("hack100.rest.longRest"), {
-              hint: i18n("hack100.rest.longRestHint"),
-            }),
+            tooltip: this.#tooltip(i18n("hack100.rest.longRest"), i18n("hack100.rest.longRestHint")),
           }
         );
       }

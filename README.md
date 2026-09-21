@@ -19,7 +19,7 @@
 | Item | Show in chat | | Open the sheet |
 | Luck, specialism points | +1 | | -1 |
 
-Every action has a tooltip that repeats these shortcuts.
+Resources (luck, specialism points) and rests have a tooltip that explains them.
 
 ## Requirements
 
