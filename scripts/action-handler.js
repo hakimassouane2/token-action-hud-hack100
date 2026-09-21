@@ -6,6 +6,13 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
   const i18n = (key) => coreModule.api.Utils.i18n(key);
 
   /**
+   * Badge shown at the right of an action button. Given as raw HTML ("icon")
+   * rather than "text": the core adds a tooltip repeating a text badge, not an
+   * icon one.
+   */
+  const badge = (text) => ({ icon: `<span class="hack100-tah-badge">${text}</span>` });
+
+  /**
    * Extends Token Action HUD Core's ActionHandler class and builds
    * Hack100 actions for the HUD.
    */
@@ -81,7 +88,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const toAction = (id) => ({
         id: `ability_${id}`,
         name: i18n(`hack100.abilities.${id}`),
-        info1: { text: `${abilities[id].value ?? 0}%` },
+        info1: badge(`${abilities[id].value ?? 0}%`),
         encodedValue: ["ability", id].join(this.delimiter),
       });
 
@@ -105,7 +112,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         .map(([key, specialism]) => ({
           id: `specialism_${key}`,
           name: specialism.name,
-          info1: { text: `${specialism.value ?? 0}%` },
+          info1: badge(`${specialism.value ?? 0}%`),
           encodedValue: ["specialism", key].join(this.delimiter),
         }));
     }
@@ -127,14 +134,14 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const abilities = rates.map(({ kind, name, value }) => ({
         id: `rate_${kind}`,
         name,
-        info1: { text: `${value}%` },
+        info1: badge(`${value}%`),
         encodedValue: ["rate", kind, "roll"].join(this.delimiter),
       }));
 
       const attacks = rates.map(({ kind, name, value }) => ({
         id: `rate_${kind}_attack`,
         name: `${i18n("hack100.npc.attack")} (${name})`,
-        info1: { text: `${value}%` },
+        info1: badge(`${value}%`),
         encodedValue: ["rate", kind, "attack"].join(this.delimiter),
       }));
 
@@ -163,7 +170,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
       const actions = weapons.map((item) => {
         const damage = parseInt(item.system?.damage) || 0;
         const action = this.#itemAction(item, "weapon");
-        action.info1 = { text: damage >= 0 ? `+${damage}` : `${damage}` };
+        action.info1 = badge(damage >= 0 ? `+${damage}` : `${damage}`);
         return action;
       });
 
@@ -181,7 +188,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         const protection = parseInt(item.system?.protection) || 0;
         const action = this.#itemAction(item, "armor");
         action.cssClass = item.system?.equipped ? "toggle active" : "toggle";
-        action.info1 = { text: `${protection}` };
+        action.info1 = badge(`${protection}`);
         return action;
       });
 
@@ -199,7 +206,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         const action = this.#itemAction(item, "item");
         const quantity = item.system?.quantity;
         if (typeof quantity === "number" && (item.system?.consumable || quantity !== 1)) {
-          action.info1 = { text: `×${quantity}` };
+          action.info1 = badge(`×${quantity}`);
         }
         return action;
       };
@@ -229,7 +236,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: `xp_${id}`,
           name,
-          info1: { text: `${ability.value ?? 0}%` },
+          info1: badge(`${ability.value ?? 0}%`),
           encodedValue: ["experience", id].join(this.delimiter),
         });
       }
@@ -238,7 +245,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
         actions.push({
           id: `xp_${key}`,
           name: specialism.name,
-          info1: { text: `${specialism.value ?? 0}%` },
+          info1: badge(`${specialism.value ?? 0}%`),
           encodedValue: ["experience", key].join(this.delimiter),
         });
       }
@@ -275,7 +282,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id: "resource_luck",
             name: i18n("hack100.luck.title"),
             img: IMAGES.luck,
-            info1: { text: `${luck.value ?? 0}/${luck.max ?? 3}` },
+            info1: badge(`${luck.value ?? 0}/${luck.max ?? 3}`),
             encodedValue: ["resource", "luck"].join(this.delimiter),
             tooltip: this.#tooltip(i18n("hack100.luck.title"), resourceHint),
           },
@@ -283,7 +290,7 @@ Hooks.once("tokenActionHudCoreApiReady", async (coreModule) => {
             id: "resource_sp",
             name: i18n("hack100.sp.title"),
             img: IMAGES.sp,
-            info1: { text: `${sp.value ?? 0}/${sp.max ?? 0}` },
+            info1: badge(`${sp.value ?? 0}/${sp.max ?? 0}`),
             encodedValue: ["resource", "sp"].join(this.delimiter),
             tooltip: this.#tooltip(i18n("hack100.sp.title"), resourceHint),
           }
